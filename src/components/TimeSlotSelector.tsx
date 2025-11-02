@@ -8,9 +8,17 @@ interface TimeSlot {
   period: "morning" | "afternoon" | "evening";
 }
 
+interface Booking {
+  id: string;
+  booking_date: string;
+  booking_time: string;
+}
+
 interface TimeSlotSelectorProps {
   selectedTime: string | null;
   onSelectTime: (time: string) => void;
+  selectedDate: Date | null;
+  existingBookings: Booking[];
 }
 
 const timeSlots: TimeSlot[] = [
@@ -31,7 +39,18 @@ const timeSlots: TimeSlot[] = [
   { time: "08:00 PM", period: "evening" },
 ];
 
-export const TimeSlotSelector = ({ selectedTime, onSelectTime }: TimeSlotSelectorProps) => {
+export const TimeSlotSelector = ({ selectedTime, onSelectTime, selectedDate, existingBookings }: TimeSlotSelectorProps) => {
+  const getBookedTimesForDate = () => {
+    if (!selectedDate) return [];
+    
+    const dateStr = selectedDate.toISOString().split("T")[0];
+    return existingBookings
+      .filter((booking) => booking.booking_date === dateStr)
+      .map((booking) => booking.booking_time);
+  };
+
+  const bookedTimes = getBookedTimesForDate();
+  const isTimeBooked = (time: string) => bookedTimes.includes(time);
   const periods = [
     { id: "morning", label: "Morning", icon: Sunrise, slots: timeSlots.filter(s => s.period === "morning") },
     { id: "afternoon", label: "Afternoon", icon: Sun, slots: timeSlots.filter(s => s.period === "afternoon") },
@@ -52,20 +71,26 @@ export const TimeSlotSelector = ({ selectedTime, onSelectTime }: TimeSlotSelecto
             <span>{period.label}</span>
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-            {period.slots.map((slot) => (
-              <Button
-                key={slot.time}
-                variant={selectedTime === slot.time ? "default" : "outline"}
-                size="sm"
-                onClick={() => onSelectTime(slot.time)}
-                className={cn(
-                  "font-medium",
-                  selectedTime === slot.time && "bg-primary text-primary-foreground"
-                )}
-              >
-                {slot.time}
-              </Button>
-            ))}
+            {period.slots.map((slot) => {
+              const isBooked = isTimeBooked(slot.time);
+              return (
+                <Button
+                  key={slot.time}
+                  variant={selectedTime === slot.time ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => onSelectTime(slot.time)}
+                  disabled={isBooked}
+                  className={cn(
+                    "font-medium",
+                    selectedTime === slot.time && "bg-primary text-primary-foreground",
+                    isBooked && "opacity-40 cursor-not-allowed"
+                  )}
+                  title={isBooked ? "Already booked" : ""}
+                >
+                  {slot.time}
+                </Button>
+              );
+            })}
           </div>
         </div>
       ))}

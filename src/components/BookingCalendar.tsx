@@ -4,12 +4,26 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+interface Booking {
+  id: string;
+  booking_date: string;
+  booking_time: string;
+}
+
 interface BookingCalendarProps {
   selectedDate: Date | null;
   onSelectDate: (date: Date) => void;
+  existingBookings: Booking[];
 }
 
-export const BookingCalendar = ({ selectedDate, onSelectDate }: BookingCalendarProps) => {
+// All available time slots
+const ALL_TIME_SLOTS = [
+  "06:00 AM", "07:00 AM", "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM",
+  "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM",
+  "05:00 PM", "06:00 PM", "07:00 PM", "08:00 PM"
+];
+
+export const BookingCalendar = ({ selectedDate, onSelectDate, existingBookings }: BookingCalendarProps) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const daysInMonth = new Date(
@@ -55,6 +69,18 @@ export const BookingCalendar = ({ selectedDate, onSelectDate }: BookingCalendarP
     return date < today;
   };
 
+  const isDateFullyBooked = (day: number) => {
+    const dateStr = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
+      .toISOString()
+      .split("T")[0];
+    
+    const bookedSlotsForDate = existingBookings.filter(
+      (booking) => booking.booking_date === dateStr
+    ).length;
+    
+    return bookedSlotsForDate >= ALL_TIME_SLOTS.length;
+  };
+
   return (
     <Card className="p-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -88,22 +114,26 @@ export const BookingCalendar = ({ selectedDate, onSelectDate }: BookingCalendarP
         {Array.from({ length: daysInMonth }).map((_, index) => {
           const day = index + 1;
           const isPast = isDatePast(day);
+          const isFullyBooked = isDateFullyBooked(day);
           const isSelected = isDateSelected(day);
+          const isDisabled = isPast || isFullyBooked;
 
           return (
             <button
               key={day}
               onClick={() => {
-                if (!isPast) {
+                if (!isDisabled) {
                   onSelectDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
                 }
               }}
-              disabled={isPast}
+              disabled={isDisabled}
               className={cn(
                 "aspect-square rounded-lg flex items-center justify-center text-sm font-medium transition-all",
                 "hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed",
-                isSelected && "bg-accent text-accent-foreground hover:bg-accent"
+                isSelected && "bg-accent text-accent-foreground hover:bg-accent",
+                isFullyBooked && !isPast && "opacity-50"
               )}
+              title={isFullyBooked ? "Fully booked" : ""}
             >
               {day}
             </button>

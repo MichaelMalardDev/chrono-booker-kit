@@ -1,18 +1,50 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BookingCalendar } from "@/components/BookingCalendar";
 import { TimeSlotSelector } from "@/components/TimeSlotSelector";
 import { BookingForm, BookingData } from "@/components/BookingForm";
 import { BookingConfirmation } from "@/components/BookingConfirmation";
 import { Button } from "@/components/ui/button";
 import { Calendar, ArrowRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type BookingStep = "calendar" | "timeslot" | "details" | "confirmation";
+
+interface Booking {
+  id: string;
+  booking_date: string;
+  booking_time: string;
+  name: string;
+  email: string;
+  phone: string;
+  notes: string | null;
+}
 
 const Index = () => {
   const [step, setStep] = useState<BookingStep>("calendar");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [bookingData, setBookingData] = useState<BookingData | null>(null);
+  const [existingBookings, setExistingBookings] = useState<Booking[]>([]);
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const fetchBookings = async () => {
+    const { data, error } = await supabase
+      .from("bookings")
+      .select("*")
+      .gte("booking_date", new Date().toISOString().split("T")[0]);
+
+    if (error) {
+      console.error("Error fetching bookings:", error);
+      toast.error("Failed to load booking availability");
+      return;
+    }
+
+    setExistingBookings(data || []);
+  };
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
@@ -34,9 +66,30 @@ const Index = () => {
     }
   };
 
-  const handleBookingSubmit = (data: BookingData) => {
+  const handleBookingSubmit = async (data: BookingData) => {
+    if (!selectedDate || !selectedTime) return;
+
+    const bookingDate = selectedDate.toISOString().split("T")[0];
+
+    const { error } = await supabase.from("bookings").insert({
+      booking_date: bookingDate,
+      booking_time: selectedTime,
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      notes: data.notes || null,
+    });
+
+    if (error) {
+      console.error("Error creating booking:", error);
+      toast.error("Failed to create booking. This time slot may already be taken.");
+      return;
+    }
+
     setBookingData(data);
+    await fetchBookings(); // Refresh bookings
     setStep("confirmation");
+    toast.success("Booking confirmed successfully!");
   };
 
   const handleNewBooking = () => {
@@ -81,6 +134,7 @@ const Index = () => {
             <BookingCalendar
               selectedDate={selectedDate}
               onSelectDate={handleDateSelect}
+              existingBookings={existingBookings}
             />
             
             <Button
@@ -105,6 +159,8 @@ const Index = () => {
             <TimeSlotSelector
               selectedTime={selectedTime}
               onSelectTime={handleTimeSelect}
+              selectedDate={selectedDate}
+              existingBookings={existingBookings}
             />
 
             <div className="flex gap-3">
