@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "composite": false,
+    "noEmit": false,
+    "stripInternal": true,
+    "jsx": "react-jsx"
+  },
+  "include": [
+    "src/index.ts",
+    "src/components/**/*.ts",
+    "src/components/**/*.tsx",
+    "src/lib/**/*.ts",
+    "src/lib/**/*.tsx"
+  ],
+  "exclude": [
+    "src/main.tsx",
+    "src/pages/**/*",
+    "src/App.tsx"
+  ]
+}

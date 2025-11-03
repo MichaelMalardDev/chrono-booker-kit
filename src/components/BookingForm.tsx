@@ -1,26 +1,37 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Calendar, Clock, User, Mail, Phone, MessageSquare } from "lucide-react";
+
+import { Card } from "./ui/card";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Textarea } from "./ui/textarea";
+import type { BookingData } from "../lib/types";
+export type { BookingData } from "../lib/types";
 
 interface BookingFormProps {
   selectedDate: Date | null;
   selectedTime: string | null;
   onSubmit: (data: BookingData) => void;
   onBack: () => void;
+  title?: string;
+  subtitle?: string;
+  submitLabel?: string;
+  backLabel?: string;
+  isSubmitting?: boolean;
 }
 
-export interface BookingData {
-  name: string;
-  email: string;
-  phone: string;
-  notes: string;
-}
-
-export const BookingForm = ({ selectedDate, selectedTime, onSubmit, onBack }: BookingFormProps) => {
+export const BookingForm = ({
+  selectedDate,
+  selectedTime,
+  onSubmit,
+  onBack,
+  title = "Booking Details",
+  subtitle = "Complete your appointment information",
+  submitLabel = "Confirm Booking",
+  backLabel = "Back",
+  isSubmitting = false,
+}: BookingFormProps) => {
   const [formData, setFormData] = useState<BookingData>({
     name: "",
     email: "",
@@ -46,8 +57,8 @@ export const BookingForm = ({ selectedDate, selectedTime, onSubmit, onBack }: Bo
   return (
     <Card className="p-6 space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Booking Details</h2>
-        <p className="text-muted-foreground">Complete your appointment information</p>
+        <h2 className="text-2xl font-bold mb-2">{title}</h2>
+        <p className="text-muted-foreground">{subtitle}</p>
       </div>
 
       <div className="space-y-3 p-4 bg-secondary rounded-lg">
@@ -122,13 +133,14 @@ export const BookingForm = ({ selectedDate, selectedTime, onSubmit, onBack }: Bo
 
         <div className="flex gap-3 pt-4">
           <Button type="button" variant="outline" onClick={onBack} className="flex-1">
-            Back
+            {backLabel}
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90"
+            disabled={isSubmitting}
           >
-            Confirm Booking
+            {isSubmitting ? "Submitting..." : submitLabel}
           </Button>
         </div>
       </form>

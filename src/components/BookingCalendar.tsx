@@ -1,30 +1,35 @@
-import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
 
-interface Booking {
-  id: string;
-  booking_date: string;
-  booking_time: string;
-}
+import { Card } from "./ui/card";
+import { Button } from "./ui/button";
+import { cn } from "../lib/utils";
+import { DEFAULT_TIME_SLOTS } from "../lib/constants";
+import type { BookingRecord, TimeSlotDefinition } from "../lib/types";
 
-interface BookingCalendarProps {
+export interface BookingCalendarProps {
   selectedDate: Date | null;
   onSelectDate: (date: Date) => void;
-  existingBookings: Booking[];
+  existingBookings: BookingRecord[];
+  timeSlots?: TimeSlotDefinition[];
+  minDate?: Date;
 }
 
-// All available time slots
-const ALL_TIME_SLOTS = [
-  "06:00 AM", "07:00 AM", "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM",
-  "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM",
-  "05:00 PM", "06:00 PM", "07:00 PM", "08:00 PM"
-];
-
-export const BookingCalendar = ({ selectedDate, onSelectDate, existingBookings }: BookingCalendarProps) => {
+export const BookingCalendar = ({
+  selectedDate,
+  onSelectDate,
+  existingBookings,
+  timeSlots = DEFAULT_TIME_SLOTS,
+  minDate,
+}: BookingCalendarProps) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const normalizedMinDate = useMemo(() => {
+    if (!minDate) return null;
+    const min = new Date(minDate);
+    min.setHours(0, 0, 0, 0);
+    return min;
+  }, [minDate]);
 
   const daysInMonth = new Date(
     currentMonth.getFullYear(),
@@ -63,7 +68,7 @@ export const BookingCalendar = ({ selectedDate, onSelectDate, existingBookings }
   };
 
   const isDatePast = (day: number) => {
-    const today = new Date();
+    const today = normalizedMinDate ?? new Date();
     today.setHours(0, 0, 0, 0);
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
     return date < today;
@@ -77,8 +82,8 @@ export const BookingCalendar = ({ selectedDate, onSelectDate, existingBookings }
     const bookedSlotsForDate = existingBookings.filter(
       (booking) => booking.booking_date === dateStr
     ).length;
-    
-    return bookedSlotsForDate >= ALL_TIME_SLOTS.length;
+
+    return bookedSlotsForDate >= timeSlots.length;
   };
 
   return (
