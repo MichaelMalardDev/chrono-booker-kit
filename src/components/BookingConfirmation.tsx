@@ -1,13 +1,19 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { CheckCircle2, Calendar, Clock, User, Mail, Phone, Download } from "lucide-react";
-import { BookingData } from "./BookingForm";
+
+import { Card } from "./ui/card";
+import { Button } from "./ui/button";
+import type { BookingData } from "../lib/types";
 
 interface BookingConfirmationProps {
   selectedDate: Date | null;
   selectedTime: string | null;
   bookingData: BookingData;
   onNewBooking: () => void;
+  title?: string;
+  description?: string;
+  detailsHeading?: string;
+  addToCalendarLabel?: string;
+  newBookingLabel?: string;
 }
 
 export const BookingConfirmation = ({
@@ -15,6 +21,11 @@ export const BookingConfirmation = ({
   selectedTime,
   bookingData,
   onNewBooking,
+  title = "Booking Confirmed!",
+  description = "Your appointment has been successfully scheduled. A confirmation email has been sent to your inbox.",
+  detailsHeading = "Appointment Details",
+  addToCalendarLabel = "Add to Calendar",
+  newBookingLabel = "Book Another Appointment",
 }: BookingConfirmationProps) => {
   const formatDate = (date: Date | null) => {
     if (!date) return "";
@@ -27,12 +38,15 @@ export const BookingConfirmation = ({
   };
 
   const handleAddToCalendar = () => {
-    // Create a simple .ics file content
+    if (!selectedDate) return;
+
+    const startDate = selectedDate.toISOString().replace(/[-:]/g, "").split(".")[0];
+
     const event = `BEGIN:VCALENDAR
 VERSION:2.0
 BEGIN:VEVENT
 SUMMARY:Appointment Booking
-DTSTART:${selectedDate?.toISOString().replace(/[-:]/g, "").split(".")[0]}Z
+DTSTART:${startDate}Z
 DESCRIPTION:Appointment confirmed for ${bookingData.name}
 END:VEVENT
 END:VCALENDAR`;
@@ -53,15 +67,13 @@ END:VCALENDAR`;
           </div>
         </div>
         <div>
-          <h2 className="text-3xl font-bold mb-2">Booking Confirmed!</h2>
-          <p className="text-muted-foreground">
-            Your appointment has been successfully scheduled. A confirmation email has been sent to your inbox.
-          </p>
+          <h2 className="text-3xl font-bold mb-2">{title}</h2>
+          <p className="text-muted-foreground">{description}</p>
         </div>
       </div>
 
       <div className="space-y-4 p-6 bg-secondary rounded-lg">
-        <h3 className="font-semibold text-lg">Appointment Details</h3>
+        <h3 className="font-semibold text-lg">{detailsHeading}</h3>
         
         <div className="space-y-3">
           <div className="flex items-start gap-3">
@@ -122,13 +134,13 @@ END:VCALENDAR`;
           className="flex-1"
         >
           <Download className="h-4 w-4 mr-2" />
-          Add to Calendar
+          {addToCalendarLabel}
         </Button>
         <Button
           onClick={onNewBooking}
           className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90"
         >
-          Book Another Appointment
+          {newBookingLabel}
         </Button>
       </div>
     </Card>
